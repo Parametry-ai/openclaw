@@ -92,6 +92,7 @@ export class GatewayClient {
   private lastTick: number | null = null;
   private tickIntervalMs = 30_000;
   private tickTimer: NodeJS.Timeout | null = null;
+  private tickWatchStarted = false;
 
   constructor(opts: GatewayClientOptions) {
     this.opts = {
@@ -285,7 +286,14 @@ export class GatewayClient {
             ? helloOk.policy.tickIntervalMs
             : 30_000;
         this.lastTick = Date.now();
-        this.startTickWatch();
+
+        // We ensures the tick watch only starts AFTER receiving the first tick
+        // from the gateway
+        if (!this.tickWatchStarted) {
+          this.tickWatchStarted = true;
+          this.startTickWatch();
+        }
+
         this.opts.onHelloOk?.(helloOk);
       })
       .catch((err) => {
